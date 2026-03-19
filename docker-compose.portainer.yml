@@ -19,7 +19,7 @@ services:
     environment:
       PORT: 4000
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-portaria_facil}
-      PUBLIC_APP_URL: ${PUBLIC_APP_URL}
+      PUBLIC_APP_URL: ${https://portaria.clickbyte.com.br}
       DEFAULT_TENANT_ID: ${DEFAULT_TENANT_ID:-default}
       DEFAULT_TENANT_SLUG: ${DEFAULT_TENANT_SLUG:-default}
       EMPLOYEE_SESSION_SECRET: ${EMPLOYEE_SESSION_SECRET}
