@@ -1,0 +1,69 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-portaria_facil}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    environment:
+      PORT: 4000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-portaria_facil}
+      PUBLIC_APP_URL: ${PUBLIC_APP_URL}
+      DEFAULT_TENANT_ID: ${DEFAULT_TENANT_ID:-default}
+      DEFAULT_TENANT_SLUG: ${DEFAULT_TENANT_SLUG:-default}
+      EMPLOYEE_SESSION_SECRET: ${EMPLOYEE_SESSION_SECRET}
+      EMPLOYEE_PASSWORD_ITERATIONS: ${EMPLOYEE_PASSWORD_ITERATIONS:-120000}
+      EMPLOYEE_SESSION_TTL_SECONDS: ${EMPLOYEE_SESSION_TTL_SECONDS:-43200}
+      BOOTSTRAP_ADMIN_NAME: ${BOOTSTRAP_ADMIN_NAME:-Administrador}
+      BOOTSTRAP_ADMIN_USERNAME: ${BOOTSTRAP_ADMIN_USERNAME:-admin}
+      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD}
+      TENANT_PROVISION_MODE: ${TENANT_PROVISION_MODE:-schema}
+      TENANT_DB_PREFIX: ${TENANT_DB_PREFIX:-tenant}
+      CRON_SECRET: ${CRON_SECRET}
+      UPLOAD_DIR: /app/uploads
+    volumes:
+      - uploads_data:/app/uploads
+
+  queue-worker:
+    image: curlimages/curl:8.12.1
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      CRON_SECRET: ${CRON_SECRET}
+    command:
+      - /bin/sh
+      - -c
+      - |
+        while true; do
+          curl -fsS -X POST -H "x-cron-secret: $$CRON_SECRET" http://backend:4000/api/functions/processNotificationQueue || true
+          sleep 60
+        done
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_SELF_HOSTED: "true"
+        VITE_SELF_HOSTED_API_URL: ""
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "${WEB_PORT:-8080}:80"
+
+volumes:
+  postgres_data:
+  uploads_data:

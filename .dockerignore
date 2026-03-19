@@ -1,0 +1,12 @@
+.git
+.gitignore
+node_modules
+dist
+backend/node_modules
+backend/uploads
+uploads
+.env
+.env.*
+!.env.self-hosted.example
+!backend/.env.example
+npm-debug.log

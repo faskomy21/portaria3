@@ -1,0 +1,130 @@
+PORTAINER - PASSO A PASSO PARA SUBIR O PORTARIA FACIL
+
+ARQUIVO DA STACK
+- Use o arquivo: docker-compose.portainer.yml
+
+RECOMENDACAO
+- O jeito mais simples no Portainer e criar a stack pelo modo "Git Repository".
+- Assim o Portainer consegue ler o repositorio, o Dockerfile do frontend e o Dockerfile do backend.
+
+ANTES DE COMECAR
+- O servidor do Portainer precisa ter Docker funcionando.
+- O repositorio precisa estar acessivel pelo Portainer.
+- Se o repositorio for privado, configure a autenticacao no Portainer.
+
+PASSO 1 - ENTRAR NO PORTAINER
+- Acesse o Portainer.
+- Entre no ambiente Docker correto.
+
+PASSO 2 - CRIAR A STACK
+- Va em "Stacks".
+- Clique em "Add stack".
+- De um nome, por exemplo: portaria-facil
+
+PASSO 3 - USAR GIT REPOSITORY
+- Escolha "Git Repository".
+- Repository URL: cole a URL do seu repositorio.
+- Repository reference: use a branch desejada.
+- Compose path: docker-compose.portainer.yml
+
+PASSO 4 - PREENCHER AS VARIAVEIS DE AMBIENTE
+- Adicione estas variaveis na tela da stack:
+
+POSTGRES_DB=portaria_facil
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=coloque-uma-senha-forte
+PUBLIC_APP_URL=https://SEU-DOMINIO
+DEFAULT_TENANT_ID=default
+DEFAULT_TENANT_SLUG=default
+EMPLOYEE_SESSION_SECRET=gere-um-segredo-forte
+EMPLOYEE_PASSWORD_ITERATIONS=120000
+EMPLOYEE_SESSION_TTL_SECONDS=43200
+BOOTSTRAP_ADMIN_NAME=Administrador
+BOOTSTRAP_ADMIN_USERNAME=admin
+BOOTSTRAP_ADMIN_PASSWORD=coloque-uma-senha-forte
+TENANT_PROVISION_MODE=schema
+TENANT_DB_PREFIX=tenant
+CRON_SECRET=gere-outro-segredo-forte
+WEB_PORT=8080
+
+OBSERVACOES IMPORTANTES
+- PUBLIC_APP_URL deve ser o dominio publico final, por exemplo:
+  https://portaria.seudominio.com
+- WEB_PORT pode ser 8080, 80 ou outra porta livre no servidor.
+- TENANT_PROVISION_MODE=schema e o melhor modo para comecar.
+- Se usar TENANT_PROVISION_MODE=database, o usuario do PostgreSQL precisa ter permissao para CREATE DATABASE.
+
+PASSO 5 - DEPLOY
+- Clique em "Deploy the stack".
+- Aguarde o Portainer buildar as imagens e subir os containers.
+
+PASSO 6 - CONFERIR OS CONTAINERS
+- Depois do deploy, confirme se estes servicos estao em execucao:
+  postgres
+  backend
+  queue-worker
+  web
+
+PASSO 7 - TESTAR
+- Abra o navegador em:
+  https://SEU-DOMINIO
+  ou
+  http://IP-DO-SERVIDOR:WEB_PORT
+
+- Acesse:
+  /Access
+
+- Primeiro login:
+  tenant: default ou vazio
+  usuario: admin
+  senha: o valor definido em BOOTSTRAP_ADMIN_PASSWORD
+
+PASSO 8 - CADASTRAR NOVOS CLIENTES
+- Acesse:
+  /CadastroCliente
+
+- Cada novo cadastro:
+  cria um tenant em public.tenants
+  provisiona o isolamento SQL
+  cria configuracao inicial
+  cria usuario admin inicial do cliente
+
+PASSO 9 - GERENCIAR TENANTS
+- Entre com o admin principal.
+- Acesse:
+  /Tenants
+
+- Nessa tela voce pode:
+  listar clientes
+  abrir o login de cada tenant
+  ativar e desativar tenants
+
+SE FOR USAR DOMINIO
+- Aponte o dominio para o servidor.
+- Se usar proxy reverso como Nginx Proxy Manager, Traefik ou Cloudflare Tunnel:
+  encaminhe o trafego para a porta WEB_PORT da stack.
+- O frontend ja faz proxy interno para /api e /uploads.
+
+SE DER ERRO NO BUILD NO PORTAINER
+- Confirme que a stack foi criada por "Git Repository".
+- Confirme que o Compose path esta exatamente assim:
+  docker-compose.portainer.yml
+- Confirme que o repositorio contem:
+  Dockerfile
+  backend/Dockerfile
+  nginx.conf
+  backend/src/server.js
+
+SE QUISER USAR WEB EDITOR EM VEZ DE GIT REPOSITORY
+- So use se os arquivos do projeto ja estiverem no proprio servidor Docker.
+- Nesse caso, o build context precisa apontar para caminhos que existem no host.
+- Se nao tiver os arquivos no host, use Git Repository.
+
+CHECKLIST FINAL
+- Dominio ou IP definido
+- POSTGRES_PASSWORD definido
+- EMPLOYEE_SESSION_SECRET definido
+- BOOTSTRAP_ADMIN_PASSWORD definido
+- CRON_SECRET definido
+- Stack em execucao
+- Login admin funcionando
